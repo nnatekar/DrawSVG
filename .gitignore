@@ -1,5 +1,6 @@
 # Build directory
 build/
+build_rel/
 
 # Useless files
 .DS_STORE

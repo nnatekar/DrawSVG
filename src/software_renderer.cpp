@@ -244,6 +244,64 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
   // Task 2: 
   // Implement line rasterization
+  if(x0 > target_w || x1 > target_w || x0 < 0 || x1 < 0)
+    return;
+  if(y0 > target_h || y1 > target_h || y0 < 0 || y1 < 0)
+    return;
+
+  float dx = x1 - x0;
+  float dy = y1 - y0;
+  float yInc = 1, xInc = 1, p = 0;
+  
+  // |slope| is between -1 and 1, x0 > x1
+  // |slope| is > 1 or < -1, y0 > y1
+  if((abs(dy) < abs(dx) && x0 > x1) || (abs(dy) >= abs(dx) && y0 > y1)) {
+    swap(x0, x1);
+    swap(y0, y1);
+  }
+
+  if(abs(dy) < abs(dx)) {
+    dx = x1 - x0;
+    dy = y1 - y0;
+
+    if(dy < 0) {
+      yInc = -1;
+      dy = -dy;
+    }
+    p = 2*dy - dx;
+
+    for(int x = x0, y = y0; x < x1; x++) {
+      rasterize_point(x,y,color);
+      if(p > 0) {
+        y += yInc;
+        p += 2*(dy-dx);
+      }
+      else {
+        p += 2*dy;
+      }
+    }
+  }
+  else {
+    dx = x1 - x0;
+    dy = y1 - y0;
+
+    if(dx < 0) {
+      xInc = -1;
+      dx = -dx;
+    }
+    p = 2*dx - dy;
+
+    for(int x = x0, y = y0; y < y1; y++) {
+      rasterize_point(x,y,color);
+      if(p > 0) {
+        x += xInc;
+        p += 2*(dx-dy);
+      }
+      else {
+        p += 2*dx;
+      }
+    }
+  }
 }
 
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
