@@ -310,7 +310,54 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               Color color ) {
   // Task 3: 
   // Implement triangle rasterization
+  // Sort points by y coordinate
+  Vector2D p0 (x0, y0);
+  Vector2D p1 (x1, y1);
+  Vector2D p2 (x2, y2);
+  Vector2D points[] = {p0, p1, p2};
 
+  std::sort(points, points + 3, [](Vector2D const & lhs, Vector2D const & rhs) -> bool 
+    { return lhs.y < rhs.y; });
+
+  // Scanline algorithm
+  // E1 = x0->x1
+  // E2 = x0->x2
+  // E3 = x1->x2
+  float dxE1 = points[1].x - points[0].x;
+  float dyE1 = points[1].y - points[0].y;
+  float dxE2 = points[2].x - points[0].x;
+  float dyE2 = points[2].y - points[0].y;
+  float dxE3 = points[2].x - points[1].x;
+  float dyE3 = points[2].y - points[1].y;
+
+  // First we draw edge E1 to E2
+  if(dyE1 == 0)
+    rasterize_line(points[0].x, points[0].y, points[1].x, points[1].y, color);
+  else if(dyE2 == 0)
+    rasterize_line(points[0].x, points[0].y, points[2].x, points[2].y, color);
+  else {
+    float xLeft = points[0].x;
+    float xRight = points[0].x;
+    for(int y = points[0].y; y < points[1].y; y++) {
+      rasterize_line(xLeft,y,xRight,y,color);
+      xLeft += dxE1 / dyE1;
+      xRight += dxE2 / dyE2;
+    }
+  }
+
+  // Next, edge E2 to E3
+  if(dyE3 == 0) {
+    rasterize_line(points[1].x, points[1].y, points[2].x, points[2].y, color);
+  }
+  else if(dyE2 != 0) {
+    float xLeft = points[2].x;
+    float xRight = points[2].x;
+    for(int y = points[2].y; y > points[1].y; y--) {
+      rasterize_line(xLeft,y,xRight,y,color);
+      xLeft -= dxE2 / dyE2;
+      xRight -= dxE3 / dyE3;
+    }
+  }
 }
 
 void SoftwareRendererImp::rasterize_image( float x0, float y0,
