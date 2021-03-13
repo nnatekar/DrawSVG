@@ -304,6 +304,10 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
   }
 }
 
+inline float edgeFunction(const Vector2D v1, const Vector2D v2, const Vector2D p) {
+  return (p.x - v1.x) * (v2.y - v1.y) - (p.y - v1.y) * (v2.x - v1.x);
+}
+
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               float x1, float y1,
                                               float x2, float y2,
@@ -311,51 +315,24 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   // Task 3: 
   // Implement triangle rasterization
   // Sort points by y coordinate
-  Vector2D p0 (x0, y0);
-  Vector2D p1 (x1, y1);
-  Vector2D p2 (x2, y2);
-  Vector2D points[] = {p0, p1, p2};
+  Vector2D v0 (x0, y0);
+  Vector2D v1 (x1, y1);
+  Vector2D v2 (x2, y2);
+  float minX = std::min(x0, std::min(x1, x2));
+  float minY = std::min(y0, std::min(y1, y2));
+  float maxX = std::max(x0, std::max(x1, x2));
+  float maxY = std::max(y0, std::max(y1, y2));
 
-  std::sort(points, points + 3, [](Vector2D const & lhs, Vector2D const & rhs) -> bool 
-    { return lhs.y < rhs.y; });
-
-  // Scanline algorithm
-  // E1 = x0->x1
-  // E2 = x0->x2
-  // E3 = x1->x2
-  float dxE1 = points[1].x - points[0].x;
-  float dyE1 = points[1].y - points[0].y;
-  float dxE2 = points[2].x - points[0].x;
-  float dyE2 = points[2].y - points[0].y;
-  float dxE3 = points[2].x - points[1].x;
-  float dyE3 = points[2].y - points[1].y;
-
-  // First we draw edge E1 to E2
-  if(dyE1 == 0)
-    rasterize_line(points[0].x, points[0].y, points[1].x, points[1].y, color);
-  else if(dyE2 == 0)
-    rasterize_line(points[0].x, points[0].y, points[2].x, points[2].y, color);
-  else {
-    float xLeft = points[0].x;
-    float xRight = points[0].x;
-    for(int y = points[0].y; y < points[1].y; y++) {
-      rasterize_line(xLeft,y,xRight,y,color);
-      xLeft += dxE1 / dyE1;
-      xRight += dxE2 / dyE2;
-    }
-  }
-
-  // Next, edge E2 to E3
-  if(dyE3 == 0) {
-    rasterize_line(points[1].x, points[1].y, points[2].x, points[2].y, color);
-  }
-  else if(dyE2 != 0) {
-    float xLeft = points[2].x;
-    float xRight = points[2].x;
-    for(int y = points[2].y; y > points[1].y; y--) {
-      rasterize_line(xLeft,y,xRight,y,color);
-      xLeft -= dxE2 / dyE2;
-      xRight -= dxE3 / dyE3;
+  for(float x = minX; x < maxX; x++) {
+    for(float y = minY; y < maxY; y++) {
+      Vector2D p (x, y);
+  
+      float insideE1 = edgeFunction(v0, v1, p);
+      float insideE2 = edgeFunction(v1, v2, p);
+      float insideE3 = edgeFunction(v2, v0, p);
+      if(insideE1 <= 0 && insideE2 <= 0 && insideE3 <= 0) {
+        rasterize_point(x, y, color);
+      }
     }
   }
 }
